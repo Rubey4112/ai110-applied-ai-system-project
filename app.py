@@ -1,9 +1,17 @@
+import logging
 import os
 import pathlib
 import streamlit as st
 from dotenv import load_dotenv
 
 load_dotenv()
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(name)s] %(levelname)s %(message)s",
+    datefmt="%H:%M:%S",
+    force=True,
+)
 
 from quiz import DocumentParser, RAGEngine, QuestionGenerator, QuizSession, LLMClient
 
@@ -17,6 +25,8 @@ provider = st.sidebar.selectbox("AI Provider", LLMClient.PROVIDERS, index=0)
 difficulty = st.sidebar.selectbox("Difficulty", ["Easy", "Normal", "Hard"], index=1)
 num_questions = QuizSession(difficulty).question_count
 st.sidebar.caption(f"Questions: {num_questions}")
+dry_run = st.sidebar.checkbox("Dry Run (no real API calls)", value=False)
+st.sidebar.metric("API Calls This Session", LLMClient.total_calls())
 
 
 # ── Session state ──────────────────────────────────────────────────────────────
@@ -95,7 +105,8 @@ elif st.session_state.status == "ready":
         with st.spinner(f"Generating {num_questions} questions with {provider.title()}…"):
             query = QuestionGenerator.query_for_difficulty(difficulty)
             chunks = st.session_state.vector_index.retrieve(query, top_k=10)
-            st.session_state.questions = QuestionGenerator(provider=provider).generate(chunks, num_questions)
+            client = LLMClient(provider=provider, dry_run=dry_run)
+            st.session_state.questions = QuestionGenerator(client=client).generate(chunks, num_questions)
             st.session_state.current_idx = 0
             st.session_state.score = 0
             st.session_state.history = []
