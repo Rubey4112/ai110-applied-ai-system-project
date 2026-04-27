@@ -1,5 +1,8 @@
 import os
 import streamlit as st
+from dotenv import load_dotenv
+
+load_dotenv()
 
 from document_parser import extract_text, chunk_text
 from rag_engine import build_index, retrieve
@@ -16,12 +19,6 @@ difficulty = st.sidebar.selectbox("Difficulty", ["Easy", "Normal", "Hard"], inde
 num_questions = get_question_count_for_difficulty(difficulty)
 st.sidebar.caption(f"Questions: {num_questions}")
 
-api_key = st.sidebar.text_input(
-    "Anthropic API Key",
-    type="password",
-    value=os.environ.get("ANTHROPIC_API_KEY", ""),
-    help="Required for question generation",
-)
 
 # ── Session state ──────────────────────────────────────────────────────────────
 _defaults = {
@@ -64,11 +61,9 @@ elif st.session_state.status == "ready":
     st.success("Document indexed. Select a difficulty in the sidebar, then start.")
 
     if st.button("Start Quiz", type="primary"):
-        if not api_key:
-            st.error("Enter your Anthropic API key in the sidebar.")
+        if not os.environ.get("ANTHROPIC_API_KEY"):
+            st.error("ANTHROPIC_API_KEY not found. Add it to your .env file and restart the app.")
             st.stop()
-
-        os.environ["ANTHROPIC_API_KEY"] = api_key
 
         with st.spinner(f"Generating {num_questions} questions…"):
             query = build_query_for_difficulty(difficulty)
