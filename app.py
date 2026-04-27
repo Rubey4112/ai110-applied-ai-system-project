@@ -4,10 +4,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from document_parser import extract_text, chunk_text
-from rag_engine import build_index, retrieve
-from question_generator import generate_questions, build_query_for_difficulty
-from quiz_logic import get_question_count_for_difficulty, parse_answer, check_answer, update_score
+from quiz import DocumentParser, RAGEngine, QuestionGenerator, QuizSession
 
 st.set_page_config(page_title="Class Quiz", page_icon="📚")
 st.title("📚 Class Quiz")
@@ -16,7 +13,7 @@ st.title("📚 Class Quiz")
 st.sidebar.header("Settings")
 
 difficulty = st.sidebar.selectbox("Difficulty", ["Easy", "Normal", "Hard"], index=1)
-num_questions = get_question_count_for_difficulty(difficulty)
+num_questions = QuizSession(difficulty).question_count
 st.sidebar.caption(f"Questions: {num_questions}")
 
 
@@ -49,9 +46,10 @@ if st.session_state.status == "idle":
 
     if uploaded_file:
         with st.spinner("Reading and indexing document…"):
-            text = extract_text(uploaded_file)
-            chunks = chunk_text(text)
-            st.session_state.vector_index = build_index(chunks)
+            parser = DocumentParser()
+            text = parser.extract(uploaded_file)
+            chunks = parser.chunk(text)
+            st.session_state.vector_index = RAGEngine().build(chunks)
             st.session_state.status = "ready"
         st.success(f"Indexed {len(chunks)} chunks. Ready to quiz!")
         st.rerun()
@@ -66,9 +64,9 @@ elif st.session_state.status == "ready":
             st.stop()
 
         with st.spinner(f"Generating {num_questions} questions…"):
-            query = build_query_for_difficulty(difficulty)
-            chunks = retrieve(query, st.session_state.vector_index, top_k=10)
-            st.session_state.questions = generate_questions(chunks, num_questions)
+            query = QuestionGenerator.query_for_difficulty(difficulty)
+            chunks = st.session_state.vector_index.retrieve(query, top_k=10)
+            st.session_state.questions = QuestionGenerator().generate(chunks, num_questions)
             st.session_state.current_idx = 0
             st.session_state.score = 0
             st.session_state.history = []
@@ -101,12 +99,12 @@ elif st.session_state.status == "playing":
         selected = st.radio("Choose your answer:", q["choices"], key=f"q_{idx}", index=None)
 
         if st.button("Submit Answer", type="primary"):
-            ok, letter, err = parse_answer(selected)
+            ok, letter, err = QuizSession.parse_answer(selected)
             if not ok:
                 st.error(err)
             else:
-                outcome, message = check_answer(letter, q["answer"])
-                st.session_state.score = update_score(st.session_state.score, outcome, idx + 1)
+                outcome, message = QuizSession.check_answer(letter, q["answer"])
+                st.session_state.score = QuizSession.update_score(st.session_state.score, outcome, idx + 1)
                 st.session_state.history.append({
                     "question": q["question"],
                     "selected": letter,
