@@ -12,9 +12,7 @@ Usage:
 import argparse
 import sys
 
-from document_parser import chunk_text
-from question_generator import build_query_for_difficulty
-from rag_engine import build_index, retrieve
+from quiz import DocumentParser, RAGEngine, QuestionGenerator
 
 SAMPLE_TEXT = """
 Photosynthesis is the process by which plants, algae, and some bacteria convert
@@ -53,15 +51,15 @@ def main():
     args = parser.parse_args()
 
     # ── Step 1: get text ───────────────────────────────────────────────────────
+    doc_parser = DocumentParser()
+
     if args.file:
         print(f"Reading file: {args.file}")
-        import io
         with open(args.file, "rb") as f:
             class _FakeUpload:
                 name = args.file
                 def read(self): return f.read()
-            from document_parser import extract_text
-            text = extract_text(_FakeUpload())
+            text = doc_parser.extract(_FakeUpload())
     else:
         print("No file provided — using built-in sample text.")
         text = SAMPLE_TEXT
@@ -69,20 +67,20 @@ def main():
     print(f"\n[1] Text length: {len(text.split())} words\n")
 
     # ── Step 2: chunk ──────────────────────────────────────────────────────────
-    chunks = chunk_text(text)
+    chunks = doc_parser.chunk(text)
     print(f"[2] Chunks created: {len(chunks)}")
     for i, c in enumerate(chunks):
         print(f"    Chunk {i}: {len(c.split())} words — \"{c[:60].strip()}…\"")
 
     # ── Step 3: build index ────────────────────────────────────────────────────
     print("\n[3] Building FAISS index (this downloads the model on first run)…")
-    index = build_index(chunks)
-    print(f"    Index built with {index.index.ntotal} vectors.")
+    engine = RAGEngine().build(chunks)
+    print(f"    Index built with {engine._index.ntotal} vectors.")
 
     # ── Step 4: retrieve ───────────────────────────────────────────────────────
-    query = args.query or build_query_for_difficulty(args.difficulty)
+    query = args.query or QuestionGenerator.query_for_difficulty(args.difficulty)
     print(f"\n[4] Retrieval query ({args.difficulty}): \"{query}\"")
-    results = retrieve(query, index, top_k=args.top_k)
+    results = engine.retrieve(query, top_k=args.top_k)
 
     print(f"\n[5] Top {len(results)} retrieved chunks (this is what would be sent to Claude):\n")
     print("=" * 70)

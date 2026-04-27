@@ -1,8 +1,7 @@
 import json
-import os
-from typing import List
+from typing import List, Optional
 
-import anthropic
+from .llm_client import LLMClient
 
 
 class QuestionGenerator:
@@ -12,11 +11,8 @@ class QuestionGenerator:
         "Hard": "detailed mechanisms, comparisons, exceptions, and nuanced relationships",
     }
 
-    def __init__(self, api_key: str = None, model: str = "claude-sonnet-4-6", client=None):
-        self._model = model
-        self._client = client or anthropic.Anthropic(
-            api_key=api_key or os.environ.get("ANTHROPIC_API_KEY")
-        )
+    def __init__(self, client: Optional[LLMClient] = None, provider: str = "claude", model: Optional[str] = None):
+        self._client = client or LLMClient(provider=provider, model=model)
 
     @classmethod
     def query_for_difficulty(cls, difficulty: str) -> str:
@@ -36,13 +32,7 @@ class QuestionGenerator:
             f"Make wrong answers plausible. Questions should test understanding, not trivial recall."
         )
 
-        message = self._client.messages.create(
-            model=self._model,
-            max_tokens=4096,
-            messages=[{"role": "user", "content": prompt}],
-        )
-
-        raw = message.content[0].text.strip()
+        raw = self._client.complete(prompt).strip()
         if raw.startswith("```"):
             parts = raw.split("```", 2)
             raw = parts[1]
@@ -52,5 +42,5 @@ class QuestionGenerator:
 
         questions = json.loads(raw)
         if not isinstance(questions, list) or not questions:
-            raise ValueError("API returned unexpected format — expected a non-empty JSON array")
+            raise ValueError("LLM returned unexpected format — expected a non-empty JSON array")
         return questions

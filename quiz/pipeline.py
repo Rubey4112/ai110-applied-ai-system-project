@@ -1,6 +1,6 @@
 import io
 import re
-from typing import List
+from typing import List, Optional
 
 import numpy as np
 import faiss
@@ -54,7 +54,7 @@ class RAGEngine:
     def __init__(self, model_name: str = "all-MiniLM-L6-v2", _model=None):
         self._model_name = model_name
         self._model = _model
-        self._index = None
+        self._index: Optional[faiss.Index] = None
         self._chunks: List[str] = []
 
     def _get_model(self) -> SentenceTransformer:
@@ -62,7 +62,7 @@ class RAGEngine:
             self._model = SentenceTransformer(self._model_name)
         return self._model
 
-    def build(self, chunks: List[str]) -> "RAGEngine":
+    def build(self, chunks: List[str]) -> RAGEngine:
         model = self._get_model()
         embeddings = model.encode(chunks, convert_to_numpy=True, normalize_embeddings=True)
         dim = embeddings.shape[1]
@@ -73,6 +73,8 @@ class RAGEngine:
         return self
 
     def retrieve(self, query: str, top_k: int = 10) -> List[str]:
+        if self._index is None:
+            raise RuntimeError("Call build() before retrieve().")
         model = self._get_model()
         q_emb = model.encode([query], convert_to_numpy=True, normalize_embeddings=True)
         k = min(top_k, len(self._chunks))

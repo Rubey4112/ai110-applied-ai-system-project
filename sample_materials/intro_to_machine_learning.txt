@@ -1,0 +1,86 @@
+Introduction to Machine Learning
+
+Machine learning (ML) is a branch of artificial intelligence that enables computer systems to learn from data and improve their performance on tasks without being explicitly programmed. Instead of following hand-written rules, a machine learning model identifies patterns in data and uses them to make predictions or decisions.
+
+Types of Machine Learning
+
+There are three main categories of machine learning: supervised learning, unsupervised learning, and reinforcement learning.
+
+Supervised Learning
+In supervised learning, the model is trained on labeled data — each training example has an input and a known correct output. The model learns to map inputs to outputs by minimizing the difference between its predictions and the true labels. Common supervised learning tasks include classification (predicting a category) and regression (predicting a continuous value). Examples include email spam detection, house price prediction, and image recognition.
+
+Unsupervised Learning
+Unsupervised learning involves training on data that has no labels. The model must discover hidden structure on its own. Clustering algorithms such as k-means group similar data points together. Dimensionality reduction techniques such as Principal Component Analysis (PCA) compress high-dimensional data into fewer dimensions while preserving important information. Anomaly detection is another common use case.
+
+Reinforcement Learning
+In reinforcement learning, an agent interacts with an environment and learns by receiving rewards or penalties based on its actions. The goal is to learn a policy — a mapping from states to actions — that maximizes cumulative reward over time. This approach is used in game-playing agents (such as AlphaGo), robotics, and autonomous driving.
+
+Key Concepts
+
+Features and Labels
+A feature is an individual measurable property used as input to a model. A label is the output the model is trying to predict. Feature engineering — the process of selecting, transforming, and creating features — has a large impact on model performance.
+
+Training, Validation, and Test Sets
+A dataset is typically split into three subsets. The training set is used to fit the model. The validation set is used to tune hyperparameters and select the best model. The test set is held out until the end and used to evaluate final model performance on unseen data.
+
+Overfitting and Underfitting
+Overfitting occurs when a model learns the training data too well, including its noise, and fails to generalize to new data. Underfitting occurs when the model is too simple to capture the underlying patterns. Techniques to combat overfitting include regularization, dropout, and early stopping.
+
+Bias and Variance
+Bias refers to errors from incorrect assumptions in the model. High bias leads to underfitting. Variance refers to sensitivity to fluctuations in the training data. High variance leads to overfitting. The bias-variance tradeoff is a fundamental challenge in model design.
+
+Common Algorithms
+
+Linear Regression
+Linear regression models the relationship between a continuous output and one or more input features as a linear equation. It minimizes the sum of squared differences between predicted and actual values.
+
+Logistic Regression
+Despite its name, logistic regression is used for binary classification. It applies the sigmoid function to a linear combination of features to produce a probability between 0 and 1.
+
+Decision Trees
+A decision tree splits the data at each node based on a feature threshold, forming a tree of if-then-else rules. Decision trees are interpretable but prone to overfitting. Ensembles of trees — random forests and gradient boosted trees — often perform better.
+
+Support Vector Machines
+Support vector machines (SVM) find the hyperplane that maximizes the margin between two classes. SVMs can handle non-linear boundaries through the kernel trick, which implicitly maps data into a higher-dimensional space.
+
+Neural Networks
+A neural network consists of layers of interconnected nodes (neurons). Each neuron computes a weighted sum of its inputs, applies a nonlinear activation function, and passes the result to the next layer. Deep neural networks with many layers are the foundation of deep learning, enabling breakthroughs in computer vision, natural language processing, and speech recognition.
+
+Model Evaluation Metrics
+
+Accuracy is the fraction of correct predictions. Precision measures how many of the predicted positives are actually positive. Recall (sensitivity) measures how many actual positives were correctly identified. The F1 score is the harmonic mean of precision and recall. For regression tasks, common metrics include Mean Absolute Error (MAE), Mean Squared Error (MSE), and Root Mean Squared Error (RMSE).
+
+The Confusion Matrix
+A confusion matrix tabulates predictions against actual labels into four cells: true positives (TP), true negatives (TN), false positives (FP), and false negatives (FN). It provides a complete picture of classifier performance beyond simple accuracy.
+
+Cross-Validation
+Cross-validation estimates how well a model generalizes to an independent dataset. In k-fold cross-validation, the data is divided into k subsets. The model is trained on k-1 folds and evaluated on the remaining fold, repeating k times. The average score across folds gives a more reliable estimate than a single train/test split.
+
+Data Preprocessing
+
+Missing Values
+Real-world data often contains missing values. Common strategies include removing rows or columns with missing data, imputing with the mean, median, or mode, and using model-based imputation.
+
+Feature Scaling
+Many algorithms are sensitive to the scale of features. Standardization (z-score normalization) transforms features to have zero mean and unit variance. Min-max normalization rescales features to a fixed range such as [0, 1].
+
+Encoding Categorical Variables
+Most ML algorithms require numerical inputs. Categorical variables can be encoded using one-hot encoding, which creates a binary column for each category, or label encoding, which assigns an integer to each category.
+
+Retrieval-Augmented Generation (RAG)
+
+Retrieval-Augmented Generation is a technique that combines information retrieval with generative language models. When a query is received, relevant documents or passages are retrieved from a knowledge base using similarity search. These retrieved passages are then provided as context to a language model, which generates a response grounded in the retrieved information. RAG reduces hallucination and allows language models to answer questions about up-to-date or domain-specific knowledge without retraining.
+
+Embeddings
+Embeddings are dense vector representations of text (or other data) in a continuous vector space. Semantically similar texts have embeddings that are close together, enabling efficient similarity search. Sentence transformers produce high-quality sentence-level embeddings and are commonly used in RAG pipelines.
+
+Vector Databases
+A vector database stores embeddings and supports fast approximate nearest-neighbor search. Common options include FAISS (Facebook AI Similarity Search), Pinecone, Weaviate, and Chroma. These databases enable retrieval of the most relevant chunks of text given a query embedding.
+
+Ethics and Fairness in Machine Learning
+
+Bias in ML models can arise from biased training data, biased labels, or biased feature selection. Biased models can perpetuate or amplify social inequalities. Fairness-aware machine learning seeks to measure and mitigate disparate impacts across demographic groups.
+
+Privacy is another concern. Models trained on sensitive data can inadvertently memorize and expose private information. Differential privacy, federated learning, and data anonymization are techniques used to protect user data.
+
+Transparency and explainability are important for trust and accountability. Techniques such as SHAP (SHapley Additive exPlanations) and LIME (Local Interpretable Model-Agnostic Explanations) help explain why a model made a particular prediction.

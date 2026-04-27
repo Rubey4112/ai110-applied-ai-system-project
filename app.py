@@ -1,10 +1,11 @@
 import os
+import pathlib
 import streamlit as st
 from dotenv import load_dotenv
 
 load_dotenv()
 
-from quiz import DocumentParser, RAGEngine, QuestionGenerator, QuizSession
+from quiz import DocumentParser, RAGEngine, QuestionGenerator, QuizSession, LLMClient
 
 st.set_page_config(page_title="Class Quiz", page_icon="📚")
 st.title("📚 Class Quiz")
@@ -12,6 +13,7 @@ st.title("📚 Class Quiz")
 # ── Sidebar ────────────────────────────────────────────────────────────────────
 st.sidebar.header("Settings")
 
+provider = st.sidebar.selectbox("AI Provider", LLMClient.PROVIDERS, index=0)
 difficulty = st.sidebar.selectbox("Difficulty", ["Easy", "Normal", "Hard"], index=1)
 num_questions = QuizSession(difficulty).question_count
 st.sidebar.caption(f"Questions: {num_questions}")
@@ -39,6 +41,18 @@ def _reset_to(status: str):
     st.session_state.status = status
 
 
+_SAMPLE_DIR = pathlib.Path(__file__).parent / "sample_materials"
+_SAMPLE_FILES = sorted(_SAMPLE_DIR.glob("*.txt"))
+
+
+def _load_text_and_index(text: str):
+    parser = DocumentParser()
+    chunks = parser.chunk(parser._clean(text))
+    st.session_state.vector_index = RAGEngine().build(chunks)
+    st.session_state.status = "ready"
+    return chunks
+
+
 # ── IDLE: file upload ──────────────────────────────────────────────────────────
 if st.session_state.status == "idle":
     st.info("Upload your class material (PDF, TXT, or DOCX) to get started.")
@@ -54,19 +68,34 @@ if st.session_state.status == "idle":
         st.success(f"Indexed {len(chunks)} chunks. Ready to quiz!")
         st.rerun()
 
+    if _SAMPLE_FILES:
+        st.divider()
+        st.subheader("Or try a sample")
+        sample_names = [f.stem.replace("_", " ").title() for f in _SAMPLE_FILES]
+        chosen = st.selectbox("Sample material", sample_names)
+        if st.button("Load Sample", type="secondary"):
+            sample_path = _SAMPLE_FILES[sample_names.index(chosen)]
+            with st.spinner(f'Loading "{chosen}"…'):
+                raw = sample_path.read_text(encoding="utf-8")
+                chunks = _load_text_and_index(raw)
+            st.success(f"Indexed {len(chunks)} chunks from sample. Ready to quiz!")
+            st.rerun()
+
 # ── READY: start quiz ──────────────────────────────────────────────────────────
 elif st.session_state.status == "ready":
     st.success("Document indexed. Select a difficulty in the sidebar, then start.")
 
     if st.button("Start Quiz", type="primary"):
-        if not os.environ.get("ANTHROPIC_API_KEY"):
-            st.error("ANTHROPIC_API_KEY not found. Add it to your .env file and restart the app.")
+        _env_keys = {"claude": "ANTHROPIC_API_KEY", "gemini": "GEMINI_API_KEY"}
+        required_key = _env_keys[provider]
+        if not os.environ.get(required_key):
+            st.error(f"{required_key} not found. Add it to your .env file and restart the app.")
             st.stop()
 
-        with st.spinner(f"Generating {num_questions} questions…"):
+        with st.spinner(f"Generating {num_questions} questions with {provider.title()}…"):
             query = QuestionGenerator.query_for_difficulty(difficulty)
             chunks = st.session_state.vector_index.retrieve(query, top_k=10)
-            st.session_state.questions = QuestionGenerator().generate(chunks, num_questions)
+            st.session_state.questions = QuestionGenerator(provider=provider).generate(chunks, num_questions)
             st.session_state.current_idx = 0
             st.session_state.score = 0
             st.session_state.history = []
