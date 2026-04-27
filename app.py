@@ -1,134 +1,177 @@
-import random
+import os
 import streamlit as st
 
-#FIX: Refactored game logic into logic_utils.py using Claude
-from logic_utils import get_range_for_difficulty, parse_guess, check_guess, update_score
+from document_parser import extract_text, chunk_text
+from rag_engine import build_index, retrieve
+from question_generator import generate_questions, build_query_for_difficulty
+from quiz_logic import get_question_count_for_difficulty, parse_answer, check_answer, update_score
 
-st.set_page_config(page_title="Glitchy Guesser", page_icon="🎮")
+st.set_page_config(page_title="Class Quiz", page_icon="📚")
+st.title("📚 Class Quiz")
 
-st.title("🎮 Game Glitch Investigator")
-st.caption("An AI-generated guessing game. Something is off.")
-
+# ── Sidebar ────────────────────────────────────────────────────────────────────
 st.sidebar.header("Settings")
 
-difficulty = st.sidebar.selectbox(
-    "Difficulty",
-    ["Easy", "Normal", "Hard"],
-    index=1,
+difficulty = st.sidebar.selectbox("Difficulty", ["Easy", "Normal", "Hard"], index=1)
+num_questions = get_question_count_for_difficulty(difficulty)
+st.sidebar.caption(f"Questions: {num_questions}")
+
+api_key = st.sidebar.text_input(
+    "Anthropic API Key",
+    type="password",
+    value=os.environ.get("ANTHROPIC_API_KEY", ""),
+    help="Required for question generation",
 )
 
-attempt_limit_map = {
-    "Easy": 6,
-    "Normal": 8,
-    "Hard": 5,
+# ── Session state ──────────────────────────────────────────────────────────────
+_defaults = {
+    "vector_index": None,
+    "questions": [],
+    "current_idx": 0,
+    "score": 0,
+    "status": "idle",       # idle | ready | playing | finished
+    "history": [],
+    "answer_submitted": False,
+    "last_result": None,    # {"outcome": str, "message": str}
 }
-attempt_limit = attempt_limit_map[difficulty]
+for k, v in _defaults.items():
+    if k not in st.session_state:
+        st.session_state[k] = v
 
-low, high = get_range_for_difficulty(difficulty)
 
-st.sidebar.caption(f"Range: {low} to {high}")
-st.sidebar.caption(f"Attempts allowed: {attempt_limit}")
+def _reset_to(status: str):
+    for k, v in _defaults.items():
+        st.session_state[k] = v
+    st.session_state.status = status
 
-if "secret" not in st.session_state:
-    st.session_state.secret = random.randint(low, high)
 
-if "attempts" not in st.session_state:
-    st.session_state.attempts = 1
+# ── IDLE: file upload ──────────────────────────────────────────────────────────
+if st.session_state.status == "idle":
+    st.info("Upload your class material (PDF, TXT, or DOCX) to get started.")
+    uploaded_file = st.file_uploader("Upload file", type=["pdf", "txt", "docx"])
 
-if "score" not in st.session_state:
-    st.session_state.score = 0
+    if uploaded_file:
+        with st.spinner("Reading and indexing document…"):
+            text = extract_text(uploaded_file)
+            chunks = chunk_text(text)
+            st.session_state.vector_index = build_index(chunks)
+            st.session_state.status = "ready"
+        st.success(f"Indexed {len(chunks)} chunks. Ready to quiz!")
+        st.rerun()
 
-if "status" not in st.session_state:
-    st.session_state.status = "playing"
+# ── READY: start quiz ──────────────────────────────────────────────────────────
+elif st.session_state.status == "ready":
+    st.success("Document indexed. Select a difficulty in the sidebar, then start.")
 
-if "history" not in st.session_state:
-    st.session_state.history = []
+    if st.button("Start Quiz", type="primary"):
+        if not api_key:
+            st.error("Enter your Anthropic API key in the sidebar.")
+            st.stop()
 
-st.subheader("Make a guess")
+        os.environ["ANTHROPIC_API_KEY"] = api_key
 
-st.info(
-    f"Guess a number between 1 and 100. "
-    f"Attempts left: {attempt_limit - st.session_state.attempts}"
-)
+        with st.spinner(f"Generating {num_questions} questions…"):
+            query = build_query_for_difficulty(difficulty)
+            chunks = retrieve(query, st.session_state.vector_index, top_k=10)
+            st.session_state.questions = generate_questions(chunks, num_questions)
+            st.session_state.current_idx = 0
+            st.session_state.score = 0
+            st.session_state.history = []
+            st.session_state.answer_submitted = False
+            st.session_state.last_result = None
+            st.session_state.status = "playing"
+        st.rerun()
 
-with st.expander("Developer Debug Info"):
-    st.write("Secret:", st.session_state.secret)
-    st.write("Attempts:", st.session_state.attempts)
-    st.write("Score:", st.session_state.score)
-    st.write("Difficulty:", difficulty)
-    st.write("History:", st.session_state.history)
+    if st.button("Upload New Document"):
+        _reset_to("idle")
+        st.rerun()
 
-raw_guess = st.text_input(
-    "Enter your guess:",
-    key=f"guess_input_{difficulty}"
-)
+# ── PLAYING: one question at a time ───────────────────────────────────────────
+elif st.session_state.status == "playing":
+    questions = st.session_state.questions
+    idx = st.session_state.current_idx
 
-col1, col2, col3 = st.columns(3)
-with col1:
-    submit = st.button("Submit Guess 🚀")
-with col2:
-    new_game = st.button("New Game 🔁")
-with col3:
-    show_hint = st.checkbox("Show hint", value=True)
+    if idx >= len(questions):
+        st.session_state.status = "finished"
+        st.rerun()
 
-#FIX: Reset game state when starting a new game, including score and history, using Claude
-#FIX: Secret number is now generated based on difficulty level. Fixed using inline chat
-if new_game:
-    st.session_state.attempts = 0
-    st.session_state.secret = random.randint(low, high)
-    st.session_state.status = "playing"
-    st.session_state.history = []
-    st.session_state.score = 0
-    st.success("New game started.")
-    st.rerun()
+    q = questions[idx]
 
-if st.session_state.status != "playing":
-    if st.session_state.status == "won":
-        st.success("You already won. Start a new game to play again.")
+    st.progress(idx / len(questions), text=f"Question {idx + 1} of {len(questions)}")
+    st.caption(f"Score: {st.session_state.score}")
+    st.divider()
+    st.subheader(q["question"])
+
+    if not st.session_state.answer_submitted:
+        selected = st.radio("Choose your answer:", q["choices"], key=f"q_{idx}", index=None)
+
+        if st.button("Submit Answer", type="primary"):
+            ok, letter, err = parse_answer(selected)
+            if not ok:
+                st.error(err)
+            else:
+                outcome, message = check_answer(letter, q["answer"])
+                st.session_state.score = update_score(st.session_state.score, outcome, idx + 1)
+                st.session_state.history.append({
+                    "question": q["question"],
+                    "selected": letter,
+                    "correct": q["answer"],
+                    "outcome": outcome,
+                })
+                st.session_state.last_result = {"outcome": outcome, "message": message}
+                st.session_state.answer_submitted = True
+                st.rerun()
+
     else:
-        st.error("Game over. Start a new game to try again.")
-    st.stop()
+        result = st.session_state.last_result
+        selected_letter = st.session_state.history[-1]["selected"]
 
-#FIX: Removed eroneous type casting when comparing submitted value to secret. Used Claude
-if submit:
-    st.session_state.attempts += 1
+        for choice in q["choices"]:
+            letter = choice[0]
+            if letter == q["answer"]:
+                st.success(f"✅ {choice}")
+            elif letter == selected_letter:
+                st.error(f"❌ {choice}")
+            else:
+                st.write(choice)
 
-    ok, guess_int, err = parse_guess(raw_guess)
-
-    if not ok:
-        st.session_state.history.append(raw_guess)
-        st.error(err)
-    else:
-        st.session_state.history.append(guess_int)
-
-        secret = st.session_state.secret
-
-        outcome, message = check_guess(guess_int, secret)
-
-        if show_hint:
-            st.warning(message)
-
-        st.session_state.score = update_score(
-            current_score=st.session_state.score,
-            outcome=outcome,
-            attempt_number=st.session_state.attempts,
-        )
-
-        if outcome == "Win":
-            st.balloons()
-            st.session_state.status = "won"
-            st.success(
-                f"You won! The secret was {st.session_state.secret}. "
-                f"Final score: {st.session_state.score}"
-            )
+        if result["outcome"] == "Correct":
+            st.success(result["message"])
         else:
-            if st.session_state.attempts >= attempt_limit:
-                st.session_state.status = "lost"
-                st.error(
-                    f"Out of attempts! "
-                    f"The secret was {st.session_state.secret}. "
-                    f"Score: {st.session_state.score}"
-                )
+            st.error(result["message"])
 
-st.divider()
-st.caption("Built by an AI that claims this code is production-ready.")
+        is_last = (idx + 1) >= len(questions)
+        if st.button("Finish Quiz" if is_last else "Next Question →", type="primary"):
+            st.session_state.current_idx += 1
+            st.session_state.answer_submitted = False
+            st.session_state.last_result = None
+            st.rerun()
+
+# ── FINISHED: results ──────────────────────────────────────────────────────────
+elif st.session_state.status == "finished":
+    st.balloons()
+    history = st.session_state.history
+    correct_count = sum(1 for h in history if h["outcome"] == "Correct")
+
+    st.header("Quiz Complete!")
+    col1, col2 = st.columns(2)
+    col1.metric("Final Score", st.session_state.score)
+    col2.metric("Correct Answers", f"{correct_count} / {len(history)}")
+
+    st.divider()
+
+    with st.expander("Review Answers"):
+        for i, h in enumerate(history, 1):
+            icon = "✅" if h["outcome"] == "Correct" else "❌"
+            st.write(f"{icon} **Q{i}:** {h['question']}")
+            st.caption(f"Your answer: **{h['selected']}** | Correct: **{h['correct']}**")
+
+    col_a, col_b = st.columns(2)
+    with col_a:
+        if st.button("Play Again", type="primary"):
+            st.session_state.status = "ready"
+            st.rerun()
+    with col_b:
+        if st.button("Upload New Document"):
+            _reset_to("idle")
+            st.rerun()
