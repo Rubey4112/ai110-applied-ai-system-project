@@ -17,7 +17,7 @@ from sentence_transformers import SentenceTransformer
 from quiz import DocumentParser, RAGEngine, QuestionGenerator, QuizSession, LLMClient
 
 
-@st.cache_resource
+@st.cache_resource(show_spinner=False)
 def _get_embedding_model(model_name: str = "all-MiniLM-L6-v2") -> SentenceTransformer:
     return SentenceTransformer(model_name)
 
@@ -30,12 +30,13 @@ st.title("📚 Class Quiz")
 # ── Sidebar ────────────────────────────────────────────────────────────────────
 st.sidebar.header("Settings")
 
-provider = st.sidebar.selectbox("AI Provider", LLMClient.PROVIDERS, index=0)
+provider = st.sidebar.selectbox("AI Provider", [p.title() for p in LLMClient.PROVIDERS], index=0)
 difficulty = st.sidebar.selectbox("Difficulty", ["Easy", "Normal", "Hard"], index=1)
 num_questions = QuizSession(difficulty).question_count
 st.sidebar.caption(f"Questions: {num_questions}")
-dry_run = st.sidebar.checkbox("Dry Run (no real API calls)", value=False)
-st.sidebar.metric("API Calls This Session", LLMClient.total_calls())
+with st.sidebar.expander("Developer Options", expanded=False):
+    dry_run = st.checkbox("Dry Run (no real API calls)", value=False)
+    st.metric("API Calls This Session", LLMClient.total_calls())
 
 
 # ── Session state ──────────────────────────────────────────────────────────────
@@ -105,7 +106,7 @@ elif st.session_state.status == "ready":
     st.success("Document indexed. Select a difficulty in the sidebar, then start.")
 
     if st.button("Start Quiz", type="primary"):
-        _env_keys = {"claude": "ANTHROPIC_API_KEY", "gemini": "GEMINI_API_KEY"}
+        _env_keys = {"Claude": "ANTHROPIC_API_KEY", "Gemini": "GEMINI_API_KEY"}
         required_key = _env_keys[provider]
         if not dry_run and not os.environ.get(required_key):
             st.error(f"{required_key} not found. Add it to your .env file and restart the app.")
@@ -188,6 +189,7 @@ elif st.session_state.status == "playing":
                     "selected": letter,
                     "correct": q["answer"],
                     "outcome": outcome,
+                    "choices": q["choices"],
                 })
                 st.session_state.last_result = {"outcome": outcome, "message": message}
                 st.session_state.answer_submitted = True
@@ -235,7 +237,14 @@ elif st.session_state.status == "finished":
         for i, h in enumerate(history, 1):
             icon = "✅" if h["outcome"] == "Correct" else "❌"
             st.write(f"{icon} **Q{i}:** {h['question']}")
-            st.caption(f"Your answer: **{h['selected']}** | Correct: **{h['correct']}**")
+            choices_map = {c[0]: c[3:] for c in h.get("choices", [])}
+            selected_text = choices_map.get(h["selected"], "")
+            correct_text = choices_map.get(h["correct"], "")
+            if h["outcome"] == "Correct":
+                st.caption(f"Your answer: **{h['selected']}.** {selected_text}")
+            else:
+                st.caption(f"Your answer: **{h['selected']}.** {selected_text} — Correct: **{h['correct']}.** {correct_text}")
+            st.divider()
 
     col_a, col_b = st.columns(2)
     with col_a:
