@@ -6,9 +6,6 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Suppress noisy __path__ alias deprecation warnings from transformers v5+
-logging.getLogger("transformers").setLevel(logging.ERROR)
-
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(name)s] %(levelname)s %(message)s",
@@ -16,7 +13,16 @@ logging.basicConfig(
     force=True,
 )
 
+from sentence_transformers import SentenceTransformer
 from quiz import DocumentParser, RAGEngine, QuestionGenerator, QuizSession, LLMClient
+
+
+@st.cache_resource
+def _get_embedding_model(model_name: str = "all-MiniLM-L6-v2") -> SentenceTransformer:
+    return SentenceTransformer(model_name)
+
+# Must run after the import — transformers resets its logger level during first import
+logging.getLogger("transformers").setLevel(logging.ERROR)
 
 st.set_page_config(page_title="Class Quiz", page_icon="📚")
 st.title("📚 Class Quiz")
@@ -61,7 +67,7 @@ _SAMPLE_FILES = sorted(_SAMPLE_DIR.glob("*.txt"))
 def _load_text_and_index(text: str):
     parser = DocumentParser()
     chunks = parser.chunk(parser._clean(text))
-    st.session_state.vector_index = RAGEngine().build(chunks)
+    st.session_state.vector_index = RAGEngine(_model=_get_embedding_model()).build(chunks)
     st.session_state.status = "ready"
     return chunks
 
@@ -76,7 +82,7 @@ if st.session_state.status == "idle":
             parser = DocumentParser()
             text = parser.extract(uploaded_file)
             chunks = parser.chunk(text)
-            st.session_state.vector_index = RAGEngine().build(chunks)
+            st.session_state.vector_index = RAGEngine(_model=_get_embedding_model()).build(chunks)
             st.session_state.status = "ready"
         st.success(f"Indexed {len(chunks)} chunks. Ready to quiz!")
         st.rerun()
@@ -116,6 +122,9 @@ elif st.session_state.status == "ready":
             st.session_state.answer_submitted = False
             st.session_state.last_result = None
             st.session_state.status = "playing"
+            for k in list(st.session_state.keys()):
+                if isinstance(k, str) and k.startswith("radio_"):
+                    del st.session_state[k]
         st.rerun()
 
     if st.button("Upload New Document"):
@@ -136,10 +145,36 @@ elif st.session_state.status == "playing":
     st.progress(idx / len(questions), text=f"Question {idx + 1} of {len(questions)}")
     st.caption(f"Score: {st.session_state.score}")
     st.divider()
-    st.subheader(q["question"])
+    st.markdown(
+        "<style>"
+        # Scale down the question heading and improve line-height for readability
+        ".stMarkdown h4{font-size:1.1rem;font-weight:600;line-height:1.7;margin-bottom:0.25rem}"
+        # Let wide display-math blocks scroll horizontally rather than wrap mid-equation
+        ".katex-display{overflow-x:auto;overflow-y:hidden;padding-bottom:2px}"
+        "</style>",
+        unsafe_allow_html=True,
+    )
+    st.markdown(f"#### {q['question']}")
 
     if not st.session_state.answer_submitted:
-        selected = st.radio("Choose your answer:", q["choices"], key=f"q_{idx}", index=None)
+        _sel_key = f"radio_{idx}"
+        if _sel_key not in st.session_state:
+            st.session_state[_sel_key] = None
+
+        st.write("**Choose your answer:**")
+        for choice in q["choices"]:
+            opt_letter = choice[0]
+            opt_text = choice[3:]  # strip "A. " prefix
+            col_btn, col_text = st.columns([0.06, 0.94])
+            with col_btn:
+                btn_type = "primary" if st.session_state[_sel_key] == opt_letter else "secondary"
+                if st.button(opt_letter, key=f"opt_{idx}_{opt_letter}", type=btn_type):
+                    st.session_state[_sel_key] = opt_letter
+                    st.rerun()
+            with col_text:
+                st.markdown(opt_text)
+
+        selected = st.session_state[_sel_key]
 
         if st.button("Submit Answer", type="primary"):
             ok, letter, err = QuizSession.parse_answer(selected)

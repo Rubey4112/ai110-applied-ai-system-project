@@ -29,7 +29,9 @@ class QuestionGenerator:
             f'- "question": the question text\n'
             f'- "choices": array of exactly 4 strings, each prefixed with "A. ", "B. ", "C. ", "D. "\n'
             f'- "answer": one of "A", "B", "C", or "D"\n\n'
-            f"Make wrong answers plausible. Questions should test understanding, not trivial recall."
+            f"Make wrong answers plausible. Questions should test understanding, not trivial recall.\n"
+            f"For math or engineering content, use LaTeX notation where appropriate: "
+            f"inline math with $...$ and display math with $$...$$."
         )
 
         raw = self._client.complete(prompt).strip()
