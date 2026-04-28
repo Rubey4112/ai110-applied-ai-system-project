@@ -54,10 +54,8 @@ def _make_questions(n=2):
 
 
 def _mock_client(raw_text):
-    mock_msg = MagicMock()
-    mock_msg.content = [MagicMock(text=raw_text)]
     mock_client = MagicMock()
-    mock_client.messages.create.return_value = mock_msg
+    mock_client.complete.return_value = raw_text
     return mock_client
 
 
@@ -120,14 +118,16 @@ def test_generate_questions_multiple_chunks_joined_in_prompt():
     mock = _mock_client(json.dumps(questions))
     gen = QuestionGenerator(client=mock)
     gen.generate(["chunk one", "chunk two", "chunk three"], num_questions=1)
-    prompt = mock.messages.create.call_args[1]["messages"][0]["content"]
+    prompt = mock.complete.call_args[0][0]
     assert "---" in prompt
 
 
 def test_generate_questions_passes_correct_model():
+    from unittest.mock import patch
     questions = _make_questions(1)
-    mock = _mock_client(json.dumps(questions))
-    gen = QuestionGenerator(client=mock)
-    gen.generate(["context"], num_questions=1)
-    call_kwargs = mock.messages.create.call_args[1]
-    assert call_kwargs["model"] == "claude-sonnet-4-6"
+    with patch("quiz.questions.LLMClient") as MockLLMClient:
+        mock_instance = _mock_client(json.dumps(questions))
+        MockLLMClient.return_value = mock_instance
+        gen = QuestionGenerator()
+        gen.generate(["context"], num_questions=1)
+        MockLLMClient.assert_called_once_with(provider="claude", model=None)
