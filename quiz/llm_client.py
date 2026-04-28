@@ -1,12 +1,13 @@
 import logging
 import os
+import time
 from typing import Optional
 
 logger = logging.getLogger(__name__)
 
 _DEFAULT_MODELS = {
     "claude": "claude-sonnet-4-6",
-    "gemini": "gemini-2.0-flash",
+    "gemini": "gemini-2.5-flash",
 }
 
 _ENV_KEYS = {
@@ -67,10 +68,11 @@ class LLMClient:
         """Send a single-turn prompt and return the response text."""
         if self._dry_run:
             logger.info(
-                "DRY RUN | provider=%s | model=%s | prompt_words=%d — skipping real API call",
+                "DRY RUN | provider=%s | model=%s | prompt_words=%d — skipping real API call\n--- PROMPT ---\n%s\n--- END PROMPT ---",
                 self._provider,
                 self._model,
                 len(prompt.split()),
+                prompt,
             )
             return (
                 '[{"question": "[DRY RUN] Placeholder — no API call was made.",'
@@ -99,9 +101,27 @@ class LLMClient:
             result = text_block.text
 
         elif self._provider == "gemini":
-            response = self._genai_client.models.generate_content(
-                model=self._model, contents=prompt
-            )
+            from google.genai.errors import ClientError
+            max_retries = 4
+            delay = 15.0
+            response = None
+            for attempt in range(max_retries):
+                try:
+                    response = self._genai_client.models.generate_content(
+                        model=self._model, contents=prompt
+                    )
+                    break
+                except ClientError as e:
+                    if e.code == 429 and attempt < max_retries - 1:
+                        logger.warning(
+                            "Gemini rate limit hit (attempt %d/%d), retrying in %.0fs",
+                            attempt + 1, max_retries, delay,
+                        )
+                        time.sleep(delay)
+                        delay *= 2
+                    else:
+                        raise
+            assert response is not None
             if response.text is None:
                 raise ValueError("Gemini returned an empty response")
             result = response.text

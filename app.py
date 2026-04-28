@@ -6,6 +6,9 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# Suppress noisy __path__ alias deprecation warnings from transformers v5+
+logging.getLogger("transformers").setLevel(logging.ERROR)
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(name)s] %(levelname)s %(message)s",
@@ -98,7 +101,7 @@ elif st.session_state.status == "ready":
     if st.button("Start Quiz", type="primary"):
         _env_keys = {"claude": "ANTHROPIC_API_KEY", "gemini": "GEMINI_API_KEY"}
         required_key = _env_keys[provider]
-        if not os.environ.get(required_key):
+        if not dry_run and not os.environ.get(required_key):
             st.error(f"{required_key} not found. Add it to your .env file and restart the app.")
             st.stop()
 
