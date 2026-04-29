@@ -245,6 +245,8 @@ This also restrict how I can guardrail this model. Ideally, I would use an agent
 
 ## Testing Summary
 
+![Unit Tests](assets/unit_tests.png)
+
 **What was tested:**
 
 | Test file | Module | # Tests |
@@ -270,7 +272,7 @@ Futhermore, unit test and
 ## Reflection
 
 **What are the limitations or biases in your system?**
-Limitations and biases is mentioned in the [Model Card](model_card.md)
+Limitations and biases are mentioned in the [Model Card](model_card.md)
 
 **Could your AI be misused, and how would you prevent that?**
 People are very ingenious so no doubt there is a case where this AI system can be misused. But this AI agent is guarded against the action of a student wanting to just get the answer to problem.
@@ -282,3 +284,8 @@ My question relevance check actually works. I won't have thought such a simple i
 One helpful suggestion the AI gave me was guiding me toward the relevance check algorithm that I mentioned above. I already conecptualize the system and how it achieve the goal of guardrailing the AI but I didn't know how to actually implement it. But since I had a clear idea of what I want, guiding the AI to implement it was trivial.
 
 On flawed suggestion that the AI gave me was using in Gemini-2.0-flash as the default Gemini model. Google deprecated the model and it is not accesible via the API anymore. The result was the API call returned an 429 rate limit error, which lead me to the wrong path when trying to debug the problem. Switching the model to Gemini-2.5-flash fixes that problem.
+
+
+## Demo
+
+[Demo Video Link](https://youtu.be/XQak2eVWt34)
