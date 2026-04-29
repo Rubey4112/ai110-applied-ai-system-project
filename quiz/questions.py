@@ -34,15 +34,15 @@ def _validate_questions(questions: list, expected_count: int) -> list:
     return valid
 
 
-def _check_relevance(questions: list, context_chunks: list, threshold: float = 0.35) -> dict:
-    """Returns a dict mapping flagged question text to its cosine similarity score."""
+def _check_relevance(questions: list, context_chunks: list, threshold: float = 0.35) -> list:
+    """Returns a list of question texts whose cosine similarity to the context is below threshold."""
     if not questions:
-        return {}
+        return []
 
     model = SentenceTransformer("all-MiniLM-L6-v2")
     context_embedding = model.encode(" ".join(context_chunks))
 
-    flagged = {}
+    flagged = []
     for q in questions:
         q_embedding = model.encode(q["question"])
         similarity = float(
@@ -50,7 +50,7 @@ def _check_relevance(questions: list, context_chunks: list, threshold: float = 0
             / (np.linalg.norm(q_embedding) * np.linalg.norm(context_embedding))
         )
         if similarity < threshold:
-            flagged[q["question"]] = similarity
+            flagged.append(q["question"])
     return flagged
 
 
@@ -110,11 +110,8 @@ class QuestionGenerator:
         dropped = len(questions) - len(relevant)
 
         if dropped:
-            for i, (text, score) in enumerate(flagged.items(), 1):
-                logger.warning(
-                    "Dropped question %d (similarity=%.3f < threshold=0.35): %s",
-                    i, score, text,
-                )
+            for i, text in enumerate(flagged, 1):
+                logger.warning("Dropped question %d (similarity < threshold=0.35): %s", i, text)
             logger.warning(
                 "%d question(s) dropped as potentially irrelevant; %d of %d requested remain.",
                 dropped, len(relevant), num_questions,
