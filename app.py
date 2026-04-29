@@ -112,21 +112,42 @@ elif st.session_state.status == "ready":
             st.error(f"{required_key} not found. Add it to your .env file and restart the app.")
             st.stop()
 
-        with st.spinner(f"Generating {num_questions} questions with {provider.title()}…"):
-            query = QuestionGenerator.query_for_difficulty(difficulty)
-            chunks = st.session_state.vector_index.retrieve(query, top_k=10)
-            client = LLMClient(provider=provider, dry_run=dry_run)
-            st.session_state.questions = QuestionGenerator(client=client).generate(chunks, num_questions)
-            st.session_state.current_idx = 0
-            st.session_state.score = 0
-            st.session_state.history = []
-            st.session_state.answer_submitted = False
-            st.session_state.last_result = None
-            st.session_state.status = "playing"
-            for k in list(st.session_state.keys()):
-                if isinstance(k, str) and k.startswith("radio_"):
-                    del st.session_state[k]
-        st.rerun()
+        try:
+            with st.spinner(f"Generating {num_questions} questions with {provider.title()}…"):
+                query = QuestionGenerator.query_for_difficulty(difficulty)
+                chunks = st.session_state.vector_index.retrieve(query, top_k=10)
+                client = LLMClient(provider=provider, dry_run=dry_run)
+                st.session_state.questions = QuestionGenerator(client=client).generate(chunks, num_questions)
+                st.session_state.current_idx = 0
+                st.session_state.score = 0
+                st.session_state.history = []
+                st.session_state.answer_submitted = False
+                st.session_state.last_result = None
+                st.session_state.status = "playing"
+                for k in list(st.session_state.keys()):
+                    if isinstance(k, str) and k.startswith("radio_"):
+                        del st.session_state[k]
+            st.rerun()
+        except Exception as e:
+            _status_code = getattr(e, "status_code", None) or getattr(e, "code", None)
+            if _status_code == 503:
+                st.error(
+                    f"**{provider} is temporarily unavailable (503).** "
+                    "The service may be overloaded — please wait a moment and try again."
+                )
+            elif _status_code == 429:
+                st.error(
+                    f"**Rate limit reached ({provider}).** "
+                    "Too many requests — please wait a few seconds and try again."
+                )
+            elif _status_code == 401:
+                st.error(
+                    f"**Invalid API key for {provider}.** "
+                    "Check your `.env` file and restart the app."
+                )
+            else:
+                st.error(f"**Failed to generate questions:** {e}")
+            st.stop()
 
     if st.button("Upload New Document"):
         _reset_to("idle")
