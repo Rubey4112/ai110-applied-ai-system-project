@@ -24,8 +24,8 @@ def _get_embedding_model(model_name: str = "all-MiniLM-L6-v2") -> SentenceTransf
 # Must run after the import — transformers resets its logger level during first import
 logging.getLogger("transformers").setLevel(logging.ERROR)
 
-st.set_page_config(page_title="Class Quiz", page_icon="📚")
-st.title("📚 Class Quiz")
+st.set_page_config(page_title="QuizFoundry", page_icon="📚")
+st.title("📚 QuizFoundry")
 
 # ── Sidebar ────────────────────────────────────────────────────────────────────
 st.sidebar.header("Settings")

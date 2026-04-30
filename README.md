@@ -1,4 +1,4 @@
-# QuizFoundary
+# QuizFoundry
 
 Based on the [CodePath AI110: Game Glitch Investigator Assignment](https://github.com/Rubey4112/ai110-module1show-gameglitchinvestigator-starter). This was an assignment showing how to use AI as a debugging partner to identify bugs and fix them. The program itself was a simple number guessing game. If you guessed wrong, it tell you whether you guessed too high or too low.
 
@@ -10,7 +10,7 @@ This is a game-based learning platform where users generate custom study quizzes
 
 ## Title and Summary
 
-**QuizFoundary** is an AI-powered Streamlit web app that turns any study document into a playable quiz. Users upload a PDF, TXT, or DOCX file, choose a difficulty level, and the system uses semantic search to find the most relevant passages before prompting an LLM (Claude or Gemini) to generate multiple-choice questions from that content. The app tracks answers, gives immediate feedback, and shows a final score — making it easy to self-test on any material.
+**QuizFoundry** is an AI-powered Streamlit web app that turns any study document into a playable quiz. Users upload a PDF, TXT, or DOCX file, choose a difficulty level, and the system uses semantic search to find the most relevant passages before prompting an LLM (Claude or Gemini) to generate multiple-choice questions from that content. The app tracks answers, gives immediate feedback, and shows a final score — making it easy to self-test on any material.
 
 ---
 
