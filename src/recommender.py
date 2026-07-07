@@ -83,6 +83,17 @@ def score_song(user_prefs: Dict, song: Dict) -> Tuple[float, List[str]]:
     Required by recommend_songs() and src/main.py
 
     score = w1*(1 - |energy_diff|) + w2*acoustic_match + w3*genre_bonus + w4*mood_bonus
+
+    Args:
+        user_prefs: User taste preferences. Accepts either the simple keys
+            used in src/main.py (genre, mood, energy) or the UserProfile-style
+            keys (favorite_genre, favorite_mood, target_energy, likes_acoustic).
+        song: A song dict as produced by load_songs(), with at least
+            genre, mood, energy, and acousticness keys.
+
+    Returns:
+        A tuple of (score, reasons) where score is a float in roughly [0, 1]
+        and reasons is a list of plain-language strings explaining the score.
     """
     target_energy = user_prefs.get("energy", user_prefs.get("target_energy", 0.5))
     favorite_genre = user_prefs.get("genre", user_prefs.get("favorite_genre"))
@@ -121,6 +132,19 @@ def recommend_songs(user_prefs: Dict, songs: List[Dict], k: int = 5) -> List[Tup
     """
     Functional implementation of the recommendation logic.
     Required by src/main.py
+
+    Scores every song against user_prefs using score_song(), then returns
+    the top k songs sorted by score in descending order.
+
+    Args:
+        user_prefs: User taste preferences, see score_song() for accepted keys.
+        songs: The full song catalog to rank, as produced by load_songs().
+        k: The number of top recommendations to return.
+
+    Returns:
+        A list of up to k (song, score, explanation) tuples, sorted by score
+        descending, where explanation is score_song()'s reasons joined into
+        a single string.
     """
     scored = []
     for song in songs:
