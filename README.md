@@ -272,13 +272,15 @@ Takeaway: these weights aren't just tuning "how good" recommendations are, they'
 
 ## Limitations and Risks
 
-Summarize some limitations of your recommender.
-
-Examples:
-
-- It only works on a tiny catalog
-- It does not understand lyrics or language
-- It might over favor one genre or mood
+- **It only works on a tiny, hand-curated catalog** (20 songs). Several genres (metal, folk, jazz, classical, reggae, etc.) have exactly one entry, so a niche favorite_genre exhausts its genre match after one song, while well-represented genres (pop, lofi, rock) keep reinforcing themselves — a popularity bias baked into the catalog composition, not the algorithm.
+- **It does not understand lyrics, language, or actual audio** — only hand-authored metadata tags (genre, mood, energy, acousticness, etc.), so any mislabeling in `data/songs.csv` propagates directly into recommendations with no way to catch it.
+- **Genre and mood matching is exact-string, not semantic** ([recommender.py:108-109](src/recommender.py#L108-L109)): "pop" gets zero credit for "indie pop" or "synthwave" even though they're musically adjacent. This is the core filter-bubble mechanism — once a favorite_genre is set, the system only ever reinforces that exact label and never surfaces adjacent genres, even when their energy/acoustic fit is excellent.
+- **No diversity-aware re-ranking** ([recommender.py:131-156](src/recommender.py#L131-L156)): `recommend_songs` just sorts by score and takes the top k, with no artist- or genre-diversity constraint. Artists with multiple catalog entries (e.g., "Neon Echo," "LoRoom") can dominate a single top-5 list, narrowing exposure even further within an already narrow genre lane.
+- **Static, hand-picked weights encode designer assumptions, not validated user behavior** ([recommender.py:72-78](src/recommender.py#L72-L78)). `W_ENERGY` and `W_ACOUSTIC` are the largest weights because a comment says those features "have the most spread" — an untested assumption applied identically to every user, not something backed by real listening outcomes. See the weight-shift experiment above for how much this choice alone reshapes who "wins" when preferences conflict.
+- **`likes_acoustic` is binary, flattening a spectrum into two poles** ([recommender.py:106](src/recommender.py#L106)). Unlike energy, which targets a continuous value, acoustic preference only rewards being near 0.0 or 1.0 acousticness — a user with moderate acoustic tolerance is pushed to an extreme rather than matched to their real nuance.
+- **Missing profile fields silently default toward "mainstream"** ([recommender.py:98-101](src/recommender.py#L98-L101)): an unset `energy` becomes 0.5 and unset `likes_acoustic` becomes `False`. Incomplete profiles aren't treated neutrally — they're quietly steered toward mid-tempo, non-acoustic songs, structurally disadvantaging acoustic/ambient/quiet genres whenever profile data is sparse.
+- **`tempo_bpm`, `valence`, and `danceability` are loaded but never scored**, so contradictions the data could catch (e.g., mood="sad" with high valence) are invisible to the algorithm — mood is trusted as a single subjective label with no independent check.
+- **No feedback loop** — the profile is static input with no mechanism to learn from what a user actually likes once recommended. Once `favorite_genre`/`favorite_mood` are set, the same narrow slice of the catalog keeps surfacing indefinitely; nothing in the algorithm introduces exploration or novelty over time.
 
 You will go deeper on this in your model card.
 
