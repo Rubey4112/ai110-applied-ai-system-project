@@ -94,13 +94,158 @@ Broken Chain Riot - Score: 0.65
 Because: energy 0.90 is 0.10 away from your target 0.80; non-acoustic preference matches this song's acousticness (0.05)
 ```
 
+Stress Test with Diverse Profiles
 ```
-# e.g.:
-# User profile: genre=indie, mood=chill, energy=low
-# Recommendations:
-#   1. ...
-#   2. ...
-#   3. ...
+=== Profile: High-Energy Pop ({'genre': 'pop', 'mood': 'happy', 'energy': 0.85}) ===
+Top recommendations:
+
+Sunrise City - Score: 0.93
+Because: matches your favorite genre (pop); matches your favorite mood (happy); energy 0.82 is 0.03 away from your target 0.85; non-acoustic preference matches this song's acousticness (0.18)
+
+Gym Hero - Score: 0.85
+Because: matches your favorite genre (pop); energy 0.93 is 0.08 away from your target 0.85; non-acoustic preference matches this song's acousticness (0.05)
+
+Broken Chain Riot - Score: 0.67
+Because: energy 0.90 is 0.05 away from your target 0.85; non-acoustic preference matches this song's acousticness (0.05)
+
+Rooftop Lights - Score: 0.66
+Because: matches your favorite mood (happy); energy 0.76 is 0.09 away from your target 0.85; non-acoustic preference matches this song's acousticness (0.35)
+
+Crown Speak - Score: 0.66
+Because: energy 0.80 is 0.05 away from your target 0.85; non-acoustic preference matches this song's acousticness (0.08)
+
+
+=== Profile: Chill Lofi ({'genre': 'lofi', 'mood': 'chill', 'energy': 0.35}) ===
+Top recommendations:
+
+Midnight Coding - Score: 0.76
+Because: matches your favorite genre (lofi); matches your favorite mood (chill); energy 0.42 is 0.07 away from your target 0.35; non-acoustic preference does not match this song's acousticness (0.71)
+
+Library Rain - Score: 0.74
+Because: matches your favorite genre (lofi); matches your favorite mood (chill); energy 0.35 is 0.00 away from your target 0.35; non-acoustic preference does not match this song's acousticness (0.86)
+
+Focus Flow - Score: 0.65
+Because: matches your favorite genre (lofi); energy 0.40 is 0.05 away from your target 0.35; non-acoustic preference does not match this song's acousticness (0.78)
+
+Island Sway - Score: 0.50
+Because: energy 0.55 is 0.20 away from your target 0.35; non-acoustic preference matches this song's acousticness (0.40)
+
+Spacewalk Thoughts - Score: 0.50
+Because: matches your favorite mood (chill); energy 0.28 is 0.07 away from your target 0.35; non-acoustic preference does not match this song's acousticness (0.92)
+
+
+=== Profile: Deep Intense Rock ({'genre': 'rock', 'mood': 'intense', 'energy': 0.9}) ===
+Top recommendations:
+
+Storm Runner - Score: 0.97
+Because: matches your favorite genre (rock); matches your favorite mood (intense); energy 0.91 is 0.01 away from your target 0.90; non-acoustic preference matches this song's acousticness (0.10)
+
+Gym Hero - Score: 0.77
+Because: matches your favorite mood (intense); energy 0.93 is 0.03 away from your target 0.90; non-acoustic preference matches this song's acousticness (0.05)
+
+Broken Chain Riot - Score: 0.69
+Because: energy 0.90 is 0.00 away from your target 0.90; non-acoustic preference matches this song's acousticness (0.05)
+
+Iron Fury - Score: 0.67
+Because: energy 0.97 is 0.07 away from your target 0.90; non-acoustic preference matches this song's acousticness (0.02)
+
+Neon Pulse Rave - Score: 0.67
+Because: energy 0.95 is 0.05 away from your target 0.90; non-acoustic preference matches this song's acousticness (0.05)
+
+
+=== Profile: Conflicting Energy/Mood ({'genre': 'rock', 'mood': 'sad', 'energy': 0.9}) ===
+Top recommendations:
+
+Storm Runner - Score: 0.87
+Because: matches your favorite genre (rock); energy 0.91 is 0.01 away from your target 0.90; non-acoustic preference matches this song's acousticness (0.10)
+
+Broken Chain Riot - Score: 0.69
+Because: energy 0.90 is 0.00 away from your target 0.90; non-acoustic preference matches this song's acousticness (0.05)
+
+Gym Hero - Score: 0.67
+Because: energy 0.93 is 0.03 away from your target 0.90; non-acoustic preference matches this song's acousticness (0.05)
+
+Iron Fury - Score: 0.67
+Because: energy 0.97 is 0.07 away from your target 0.90; non-acoustic preference matches this song's acousticness (0.02)
+
+Neon Pulse Rave - Score: 0.67
+Because: energy 0.95 is 0.05 away from your target 0.90; non-acoustic preference matches this song's acousticness (0.05)
+
+
+=== Profile: Out-of-Range Energy ({'genre': 'pop', 'mood': 'happy', 'energy': 1.5}) ===
+Top recommendations:
+
+Sunrise City - Score: 0.67
+Because: matches your favorite genre (pop); matches your favorite mood (happy); energy 0.82 is 0.68 away from your target 1.50; non-acoustic preference matches this song's acousticness (0.18)
+
+Gym Hero - Score: 0.66
+Because: matches your favorite genre (pop); energy 0.93 is 0.57 away from your target 1.50; non-acoustic preference matches this song's acousticness (0.05)
+
+Iron Fury - Score: 0.48
+Because: energy 0.97 is 0.53 away from your target 1.50; non-acoustic preference matches this song's acousticness (0.02)
+
+Neon Pulse Rave - Score: 0.46
+Because: energy 0.95 is 0.55 away from your target 1.50; non-acoustic preference matches this song's acousticness (0.05)
+
+Broken Chain Riot - Score: 0.45
+Because: energy 0.90 is 0.60 away from your target 1.50; non-acoustic preference matches this song's acousticness (0.05)
+
+
+=== Profile: Unknown Genre ({'genre': 'dubstep', 'mood': 'happy', 'energy': 0.7}) ===
+Top recommendations:
+
+Sunrise City - Score: 0.70
+Because: matches your favorite mood (happy); energy 0.82 is 0.12 away from your target 0.70; non-acoustic preference matches this song's acousticness (0.18)
+
+Rooftop Lights - Score: 0.67
+Because: matches your favorite mood (happy); energy 0.76 is 0.06 away from your target 0.70; non-acoustic preference matches this song's acousticness (0.35)
+
+Crown Speak - Score: 0.64
+Because: energy 0.80 is 0.10 away from your target 0.70; non-acoustic preference matches this song's acousticness (0.08)
+
+Night Drive Loop - Score: 0.61
+Because: energy 0.75 is 0.05 away from your target 0.70; non-acoustic preference matches this song's acousticness (0.22)
+
+Broken Chain Riot - Score: 0.60
+Because: energy 0.90 is 0.20 away from your target 0.70; non-acoustic preference matches this song's acousticness (0.05)
+
+
+=== Profile: Empty Preferences ({}) ===
+Top recommendations:
+
+Island Sway - Score: 0.56
+Because: energy 0.55 is 0.05 away from your target 0.50; non-acoustic preference matches this song's acousticness (0.40)
+
+Crown Speak - Score: 0.56
+Because: energy 0.80 is 0.30 away from your target 0.50; non-acoustic preference matches this song's acousticness (0.08)
+
+Noche Caliente - Score: 0.54
+Because: energy 0.68 is 0.18 away from your target 0.50; non-acoustic preference matches this song's acousticness (0.30)
+
+Night Drive Loop - Score: 0.53
+Because: energy 0.75 is 0.25 away from your target 0.50; non-acoustic preference matches this song's acousticness (0.22)
+
+Broken Chain Riot - Score: 0.52
+Because: energy 0.90 is 0.40 away from your target 0.50; non-acoustic preference matches this song's acousticness (0.05)
+
+
+=== Profile: Acoustic-Loving Metalhead ({'favorite_genre': 'metal', 'favorite_mood': 'angry', 'target_energy': 0.95, 'likes_acoustic': True}) ===
+Top recommendations:
+
+Iron Fury - Score: 0.70
+Because: matches your favorite genre (metal); matches your favorite mood (angry); energy 0.97 is 0.02 away from your target 0.95; acoustic preference does not match this song's acousticness (0.02)
+
+Mountain Promise - Score: 0.45
+Because: energy 0.50 is 0.45 away from your target 0.95; acoustic preference matches this song's acousticness (0.75)
+
+Coffee Shop Stories - Score: 0.44
+Because: energy 0.37 is 0.58 away from your target 0.95; acoustic preference matches this song's acousticness (0.89)
+
+Rooftop Lights - Score: 0.43
+Because: energy 0.76 is 0.19 away from your target 0.95; acoustic preference does not match this song's acousticness (0.35)
+
+Library Rain - Score: 0.42
+Because: energy 0.35 is 0.60 away from your target 0.95; acoustic preference matches this song's acousticness (0.86)
 ```
 
 **Screenshot or video** *(optional)*: <!-- Insert a screenshot or demo video link here -->
@@ -109,11 +254,19 @@ Because: energy 0.90 is 0.10 away from your target 0.80; non-acoustic preference
 
 ## Experiments You Tried
 
-Use this section to document the experiments you ran. For example:
+### Weight shift: double energy, halve genre
 
-- What happened when you changed the weight on genre from 2.0 to 0.5
-- What happened when you added tempo or valence to the score
-- How did your system behave for different types of users
+Changed the weights in `score_song` from `W_ENERGY=0.4, W_ACOUSTIC=0.3, W_GENRE=0.2, W_MOOD=0.1` to `W_ENERGY=0.8, W_ACOUSTIC=0.3, W_GENRE=0.1, W_MOOD=0.1` and re-ran all 8 profiles from the stress test above.
+
+**Result: different, not more accurate.** There's no labeled/ground-truth data for this recommender (no real user feedback to check rankings against), so "accuracy" isn't actually measurable here — what changes is *which signal wins when preferences conflict*.
+
+- **Clean profiles** (High-Energy Pop, Chill Lofi, Deep Intense Rock): the #1 recommendation never changed. Only 4th/5th place songs swapped, because doubling energy's weight let small energy-distance differences break ties that genre/mood used to settle. Low impact.
+- **No-genre-signal profiles** (Unknown Genre, Empty Preferences): halving `W_GENRE` did *nothing* — `genre_bonus` was already 0 for every song in those cases, so all the reordering came from the energy boost alone.
+- **Adversarial profile** (Acoustic-Loving Metalhead: `target_energy=0.95, likes_acoustic=True` — self-contradictory, since acoustic songs in this catalog skew low-energy) flipped completely:
+  - Before: acoustic songs (Mountain Promise, Coffee Shop Stories, Library Rain) ranked high despite a bad energy match — the recommender effectively trusted `likes_acoustic` over `target_energy`.
+  - After: high-energy non-acoustic songs (Neon Pulse Rave, Gym Hero, Storm Runner) took over the top slots — energy steamrolled the acoustic preference entirely.
+
+Takeaway: these weights aren't just tuning "how good" recommendations are, they're deciding which contradictory user signal to believe when a profile is self-inconsistent. Reweighting toward energy makes the system resolve conflicts in energy's favor — a design/values choice, not a correctness fix, since there's no labeled data to say which resolution real users would actually prefer.
 
 ---
 
