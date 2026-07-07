@@ -69,20 +69,64 @@ def load_songs(csv_path: str) -> List[Dict]:
             songs.append(song)
     return songs
 
+# Weights for score_song. w1 (energy) and w2 (acoustic) are largest because
+# those features have the most spread across the catalog and map most
+# directly to explicit user intent (target_energy, likes_acoustic).
+W_ENERGY = 0.4
+W_ACOUSTIC = 0.3
+W_GENRE = 0.2
+W_MOOD = 0.1
+
 def score_song(user_prefs: Dict, song: Dict) -> Tuple[float, List[str]]:
     """
     Scores a single song against user preferences.
     Required by recommend_songs() and src/main.py
+
+    score = w1*(1 - |energy_diff|) + w2*acoustic_match + w3*genre_bonus + w4*mood_bonus
     """
-    # TODO: Implement scoring logic using your Algorithm Recipe from Phase 2.
-    # Expected return format: (score, reasons)
-    return []
+    target_energy = user_prefs.get("energy", user_prefs.get("target_energy", 0.5))
+    favorite_genre = user_prefs.get("genre", user_prefs.get("favorite_genre"))
+    favorite_mood = user_prefs.get("mood", user_prefs.get("favorite_mood"))
+    likes_acoustic = user_prefs.get("likes_acoustic", False)
+
+    energy_diff = abs(song["energy"] - target_energy)
+    energy_score = 1 - energy_diff
+
+    acoustic_match = song["acousticness"] if likes_acoustic else 1 - song["acousticness"]
+
+    genre_bonus = 1.0 if song["genre"] == favorite_genre else 0.0
+    mood_bonus = 1.0 if song["mood"] == favorite_mood else 0.0
+
+    score = (
+        W_ENERGY * energy_score
+        + W_ACOUSTIC * acoustic_match
+        + W_GENRE * genre_bonus
+        + W_MOOD * mood_bonus
+    )
+
+    reasons = []
+    if genre_bonus:
+        reasons.append(f"matches your favorite genre ({favorite_genre})")
+    if mood_bonus:
+        reasons.append(f"matches your favorite mood ({favorite_mood})")
+    reasons.append(f"energy {song['energy']:.2f} is {energy_diff:.2f} away from your target {target_energy:.2f}")
+    reasons.append(
+        f"{'acoustic' if likes_acoustic else 'non-acoustic'} preference "
+        f"{'matches' if acoustic_match >= 0.5 else 'does not match'} this song's acousticness ({song['acousticness']:.2f})"
+    )
+
+    return score, reasons
 
 def recommend_songs(user_prefs: Dict, songs: List[Dict], k: int = 5) -> List[Tuple[Dict, float, str]]:
     """
     Functional implementation of the recommendation logic.
     Required by src/main.py
     """
-    # TODO: Implement scoring and ranking logic
-    # Expected return format: (song_dict, score, explanation)
-    return []
+    scored = []
+    for song in songs:
+        score, reasons = score_song(user_prefs, song)
+        explanation = "; ".join(reasons)
+        scored.append((song, score, explanation))
+
+    scored.sort(key=lambda item: item[1], reverse=True)
+    return scored[:k]
