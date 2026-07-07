@@ -21,6 +21,23 @@ Replace this paragraph with your own summary of what your version does.
 
 **This system**: This recommender is a simplified, purely content-based version of that second half. It has no user population or listening history to mine — just a small Song catalog with hand-authored attributes (genre, mood, energy, tempo, valence, danceability, acousticness) and a single UserProfile describing one person's stated preferences (favorite genre/mood, target energy, acoustic preference). score_song compares each song's attributes to the user's profile and produces a numeric score plus a plain-language reason, and recommend_songs ranks the full catalog by that score and returns the top k — the same core mechanic real systems use for their content-based half, just without the collaborative, population-scale layer on top.
 
+```mermaid
+flowchart TD
+    A[data/songs.csv] -->|load_songs| B[List of Song records]
+    C[UserProfile, favorite_genre, favorite_mood, target_energy, likes_acoustic] --> E
+
+    subgraph D[recommend_songs]
+        E[score_song for each Song] --> F[song, score, explanation]
+        F --> G[Sort by score, descending]
+        G --> H[Take top k]
+    end
+
+    B --> E
+    H --> I[Ranked recommendation list]
+```
+
+`score = w1*(1 - |energy_diff|) + w2*acoustic_match + w3*genre_bonus + w4*mood_bonus`, with w1, w2 largest since those two features have the most spread and best map to explicit user intent.
+
 ---
 
 ## Getting Started
