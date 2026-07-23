@@ -75,6 +75,47 @@ You can add more tests in `tests/test_recommender.py`.
 
 ---
 
+## Agentic Workflow (Stretch Feature)
+
+The core recommender above is purely rule-based — no model calls, just a
+weighted score. `src/agent.py` adds an agent that wraps it: it takes a
+free-text taste description, turns that into the recommender's structured
+input, runs the *existing, unmodified* `recommend_songs()`, then asks Gemini
+to judge whether the results actually satisfy the request and retries with
+an adjustment if not. Plan -> act -> check -> revise. Full design in
+[diagrams/plan.md](diagrams/plan.md).
+
+### Setup
+
+1. Get a Gemini API key from [Google AI Studio](https://aistudio.google.com/apikey).
+2. Copy `.env.example` to `.env` and fill in `GEMINI_API_KEY`.
+3. Install the extra dependencies (already in `requirements.txt`):
+
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+### Running the demo
+
+```bash
+python -m src.agent_main
+```
+
+This runs a few sample free-text requests (e.g. *"I want something chill for
+studying, not too sad"*) through the agent and prints both its trace (what it
+parsed, whether it was satisfied, and any retries) and the final
+recommendations.
+
+### Running the tests
+
+`tests/test_agent.py` mocks the Gemini calls (no network access, no API key
+required) and specifically exercises the retry loop: one test drives an
+unsatisfied -> satisfied sequence and checks that the excluded mood actually
+gets filtered out on the second attempt, and another checks that the loop
+gives up gracefully after `max_retries` instead of looping forever.
+
+---
+
 ## Sample Recommendation Output
 
 ```
