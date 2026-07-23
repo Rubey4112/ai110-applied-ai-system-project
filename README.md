@@ -57,11 +57,21 @@ flowchart TD
 pip install -r requirements.txt
 ```
 
-3. Run the app:
+3. Set up the Gemini API key needed by the chat UI (see
+   [Agentic Workflow](#agentic-workflow-stretch-feature) below) — copy
+   `.env.example` to `.env` and fill in `GEMINI_API_KEY`.
+
+4. Run the app:
 
 ```bash
 python -m src.main
 ```
+
+This launches a local Gradio chat UI at `http://127.0.0.1:7860` — a session
+list on the left, a conversational chat box on the right. Type a free-text
+music request (e.g. *"chill lofi for studying, not too sad"*) and the agent
+in `src/agent.py` parses it, runs the recommender, and checks its own
+results before replying.
 
 ### Running Tests
 
@@ -97,6 +107,12 @@ an adjustment if not. Plan -> act -> check -> revise. Full design in
 
 ### Running the demo
 
+The primary way to try the agent is the Gradio chat UI — `python -m src.main`
+(see [Getting Started](#getting-started) above).
+
+There's also a plain CLI version for a quicker look at the trace output
+without a browser:
+
 ```bash
 python -m src.agent_main
 ```
@@ -113,6 +129,11 @@ required) and specifically exercises the retry loop: one test drives an
 unsatisfied -> satisfied sequence and checks that the excluded mood actually
 gets filtered out on the second attempt, and another checks that the loop
 gives up gracefully after `max_retries` instead of looping forever.
+
+`tests/test_main.py` mocks `recommend_from_text` and covers the Gradio chat
+UI's session logic directly (no browser needed): sending a message appends
+to the transcript and titles the session, blank input is a no-op, and
+starting a new chat then switching back restores the original transcript.
 
 ---
 
