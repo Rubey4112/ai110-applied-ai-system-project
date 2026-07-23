@@ -2,10 +2,13 @@
 Gradio chat UI for the agentic music recommender (see src/agent.py).
 
 Left panel: chat session list (like a sidebar) with a "+ New chat" button.
-Main panel: a conversational chat box. Each user message is a free-text
-music request routed through src.agent.recommend_from_text(), which parses
-it, runs the existing recommend_songs(), checks whether the results satisfy
-the request, and retries with an adjustment if not.
+Center: a conversational chat box. Each user message is a free-text music
+request routed through src.agent.recommend_from_text(), which parses it,
+runs the existing recommend_songs(), checks whether the results satisfy the
+request, and retries with an adjustment if not.
+Right panel: a compact, scrolling history of every request made in the
+current session and the songs that were recommended for each, most recent
+first.
 
 Requires GEMINI_API_KEY to be set (see .env.example). Run with:
     python -m src.main
@@ -30,11 +33,17 @@ from src.recommender import load_songs
 
 SONGS = load_songs(os.path.join(_PROJECT_ROOT, "data", "songs.csv"))
 NEW_CHAT_TITLE = "New chat"
+NO_REQUEST_TEXT = "_Nothing yet — ask for a recommendation to see it here._"
+HISTORY_PANEL_HEIGHT = 480
 
 
 def _new_session():
     session_id = str(uuid.uuid4())
-    return session_id, {"title": NEW_CHAT_TITLE, "messages": []}
+    return session_id, {
+        "title": NEW_CHAT_TITLE,
+        "messages": [],
+        "request_history": [],
+    }
 
 
 def _session_choices(sessions, order):
@@ -47,6 +56,25 @@ def _format_reply(recommendations):
         for song, score, explanation in recommendations
     ]
     return "Here's what I found:\n\n" + "\n\n".join(lines)
+
+
+def _format_history_entry(request_text: str, recommendations: list) -> str:
+    songs = "\n".join(
+        f"{i}. **{song['title']}** — {score:.2f} · {song['genre']} · {song['mood']}"
+        for i, (song, score, _) in enumerate(recommendations, start=1)
+    )
+    return f"**Request:** {request_text}\n{songs}"
+
+
+def _panel_content(session: dict) -> str:
+    history = session.get("request_history") or []
+    if not history:
+        return NO_REQUEST_TEXT
+    entries = [
+        _format_history_entry(entry["request"], entry["recommendations"])
+        for entry in reversed(history)
+    ]
+    return "\n\n---\n".join(entries)
 
 
 def _trace_title(step: str) -> str:
@@ -76,7 +104,13 @@ def _trace_message(step: str) -> dict:
 
 def send_message(message, current_id, sessions, order):
     if not message.strip():
-        return "", sessions[current_id]["messages"], sessions, gr.update()
+        return (
+            "",
+            sessions[current_id]["messages"],
+            sessions,
+            gr.update(),
+            _panel_content(sessions[current_id]),
+        )
 
     recommendations, trace = recommend_from_text(message, SONGS, k=5)
 
@@ -84,6 +118,9 @@ def send_message(message, current_id, sessions, order):
     sessions[current_id]["messages"].extend(_trace_message(step) for step in trace)
     sessions[current_id]["messages"].append(
         {"role": "assistant", "content": _format_reply(recommendations)}
+    )
+    sessions[current_id]["request_history"].append(
+        {"request": message, "recommendations": recommendations}
     )
     if sessions[current_id]["title"] == NEW_CHAT_TITLE:
         title = message.strip()[:40]
@@ -94,6 +131,7 @@ def send_message(message, current_id, sessions, order):
         sessions[current_id]["messages"],
         sessions,
         gr.update(choices=_session_choices(sessions, order), value=current_id),
+        _panel_content(sessions[current_id]),
     )
 
 
@@ -107,11 +145,12 @@ def new_chat(sessions, order):
         order,
         [],
         gr.update(choices=_session_choices(sessions, order), value=session_id),
+        _panel_content(session),
     )
 
 
 def switch_session(session_id, sessions):
-    return session_id, sessions[session_id]["messages"]
+    return session_id, sessions[session_id]["messages"], _panel_content(sessions[session_id])
 
 
 def build_app() -> gr.Blocks:
@@ -125,7 +164,7 @@ def build_app() -> gr.Blocks:
         current_session = gr.State(first_id)
 
         with gr.Row():
-            with gr.Column(scale=1, min_width=220):
+            with gr.Column(scale=1, min_width=200):
                 gr.Markdown("### Chat sessions")
                 new_chat_btn = gr.Button("+ New chat")
                 session_list = gr.Radio(
@@ -134,7 +173,7 @@ def build_app() -> gr.Blocks:
                     show_label=False,
                 )
 
-            with gr.Column(scale=4):
+            with gr.Column(scale=3):
                 chatbot = gr.Chatbot(label="Music Recommender", height=520)
                 msg = gr.Textbox(
                     placeholder=(
@@ -144,20 +183,34 @@ def build_app() -> gr.Blocks:
                     show_label=False,
                 )
 
+            with gr.Column(scale=1, min_width=180):
+                gr.Markdown("### History")
+                history_panel = gr.Markdown(
+                    value=_panel_content(first_session),
+                    max_height=HISTORY_PANEL_HEIGHT,
+                )
+
         msg.submit(
             send_message,
             inputs=[msg, current_session, sessions_state, order_state],
-            outputs=[msg, chatbot, sessions_state, session_list],
+            outputs=[msg, chatbot, sessions_state, session_list, history_panel],
         )
         new_chat_btn.click(
             new_chat,
             inputs=[sessions_state, order_state],
-            outputs=[current_session, sessions_state, order_state, chatbot, session_list],
+            outputs=[
+                current_session,
+                sessions_state,
+                order_state,
+                chatbot,
+                session_list,
+                history_panel,
+            ],
         )
         session_list.change(
             switch_session,
             inputs=[session_list, sessions_state],
-            outputs=[current_session, chatbot],
+            outputs=[current_session, chatbot, history_panel],
         )
 
     return demo
