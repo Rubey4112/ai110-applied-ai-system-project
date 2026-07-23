@@ -1,6 +1,6 @@
 # 🎵 TuneMatch — A Content-Based Music Recommender + Agentic Wrapper
 
-## Original Project (Modules 1–3)
+## Original Project (Module 3)
 
 This project started as [**Music Recommender Simulation**](https://github.com/Rubey4112/ai110-module3show-musicrecommendersimulation-starter/tree/tech-fellow), a CodePath classroom exercise: build and explain a small, content-based music recommender. The starter goal was to represent songs and a user "taste profile" as data, design a scoring rule that turns that data into ranked recommendations, evaluate what the system gets right and wrong, and reflect on how it mirrors real-world recommenders like Spotify or YouTube. The starter code shipped with the data model in place but the scoring and ranking logic left as empty `TODO`s.
 
