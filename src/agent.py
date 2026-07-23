@@ -51,7 +51,7 @@ def _call_gemini_json(prompt: str) -> dict:
     Isolated as its own function so tests can monkeypatch this single
     call site instead of hitting the network.
     """
-    model = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
+    model = os.environ.get("GEMINI_MODEL", "gemini-3.5-flash-lite")
     response = _get_client().models.generate_content(
         model=model,
         contents=prompt,
