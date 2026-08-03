@@ -6,13 +6,13 @@ from typing import Optional
 logger = logging.getLogger(__name__)
 
 _DEFAULT_MODELS = {
+    "gemini": "gemini-3.5-flash-lite",
     "claude": "claude-sonnet-4-6",
-    "gemini": "gemini-2.5-flash",
 }
 
 _ENV_KEYS = {
-    "claude": "ANTHROPIC_API_KEY",
     "gemini": "GEMINI_API_KEY",
+    "claude": "ANTHROPIC_API_KEY",
 }
 
 
