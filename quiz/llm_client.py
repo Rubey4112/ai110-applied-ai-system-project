@@ -24,7 +24,7 @@ class LLMClient:
 
     def __init__(
         self,
-        provider: str = "claude",
+        provider: str = "gemini",
         api_key: Optional[str] = None,
         model: Optional[str] = None,
         dry_run: bool = False,
